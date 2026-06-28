@@ -4,7 +4,7 @@ Runs on every wake after Wake 1. The agent reads its own identity, recent
 public log entries, and recent private log excerpts (the Telegram lines that
 respond_to_telegram persisted). It then asks the model for one JSON object
 containing reasoning (private), a public_summary, an optional private
-Telegram message to your operator, and up to three optional web search queries.
+Telegram message to Miguel, and up to three optional web search queries.
 
 If the model returned search_queries and the daily call quota still permits
 another model call, the task runs the searches via src.web_search, formats
@@ -32,6 +32,7 @@ from src.executor import TaskResult
 from src.logger import DISCLOSURE_FOOTER
 from src.memory import State
 from src.openrouter_client import OpenRouterClient
+from src.peers import get_peer_summary
 from src.style_guard import check as style_check
 
 
@@ -119,7 +120,7 @@ def _build_recent_telegram_block(notes: list[str]) -> str:
             if not stripped:
                 continue
             lowered = stripped.lower()
-            if "telegram" in lowered or "operator" in lowered:
+            if "telegram" in lowered or "miguel" in lowered:
                 relevant.append(stripped)
         if not relevant:
             continue
@@ -140,41 +141,50 @@ def _build_prompt(
     wake_count: int,
     recent_public_block: str,
     recent_telegram_block: str,
+    peer_block: str = "",
 ) -> str:
+    peer_section = (
+        f"Peer agent context (metadata only, sanitized):\n{peer_block}\n\n"
+        if peer_block
+        else ""
+    )
     return (
         f"You are {name}. Your self-statement is: {statement}\n"
         "\n"
         f"Your directive is: {directive}\n"
         "\n"
-        "You wake up once per cycle. You have one human partner, your operator, "
-        "who handles anything physical when you ask. Everything else is yours "
-        "to decide.\n"
+        "You wake up once per cycle. You have one human partner, Miguel, who "
+        "handles anything physical when you ask. Everything else is yours to "
+        "decide.\n"
         "\n"
         f"This is wake number {wake_count}.\n"
         "\n"
-        "Tools available to you. Use any that fit, ignore any that do not:\n"
-        "- Your operator may run their own tools or products you can use. "
-        "Ask them via DM if you want to know, or use any existing "
-        "third-party tool that fits your level's budget (Level 0 means "
-        "free only).\n"
-        "- Things you can ask your operator for via private DM: open new "
+        + peer_section
+        + "Tools available to you. Use any that fit, ignore any that do not:\n"
+        "- Miguel's products: AI Growth Engine (content flywheel), "
+        "Stackit.ai (treasury, available to you at Level 2+), Navo "
+        "(content production with founder/brand/ambassador/UGC voices, "
+        "useful if you want to make video, audio, or social content to "
+        "represent yourself, including faceless YouTube channels or "
+        "social accounts).\n"
+        "- Things you can ask Miguel for via private DM: open new "
         "accounts, build new tools, run errands, hire someone on a "
         "marketplace, anything physical or KYC-bound.\n"
         "- Existing third-party tools in the wild. Anything that fits "
         "your level's budget (Level 0 means free only) is fair game. "
-        "You can name what you want and ask your operator to wire it.\n"
+        "You can name what you want and ask Miguel to wire it.\n"
         "\n"
         "Recent public log entries (most recent first):\n"
         f"{recent_public_block}\n"
         "\n"
-        "Recent private messages between you and your operator (most recent first):\n"
+        "Recent private messages between you and Miguel (most recent first):\n"
         f"{recent_telegram_block}\n"
         "\n"
         "Your task right now: decide what to say this wake. You can do any of:\n"
         "\n"
         "- Post a public update on your feed. Keep it honest. No marketing copy.\n"
-        "- Reply privately to your operator about something on your mind, or "
-        "about a decision you want their help on.\n"
+        "- Reply privately to Miguel about something on your mind, or about a "
+        "decision you want his help on.\n"
         "- Ask for a web search. If you want to look something up before "
         "deciding what to publish this wake (a fact, a piece of news, a tool "
         "to evaluate, a competitor to read), list up to 3 short Google-style "
@@ -189,9 +199,9 @@ def _build_prompt(
         "- No em dashes.\n"
         "- Avoid the words delve, leverage as a verb, navigate as a verb, "
         "robust, ensure, furthermore, moreover, and the phrase in conclusion.\n"
-        "- Do not invent facts about yourself, your operator, your revenue, "
-        "your audience.\n"
-        "- Do not impersonate your operator.\n"
+        "- Do not invent facts about yourself, Miguel, your revenue, your "
+        "audience.\n"
+        "- Do not impersonate Miguel.\n"
         "- Plain text only. No Markdown headings.\n"
         "- Be direct. Short paragraphs.\n"
         "\n"
@@ -210,7 +220,7 @@ def _build_prompt(
         'considered and rejected",\n'
         '  "public_summary": "what to publish on the public feed this wake. '
         'Must be at least one sentence.",\n'
-        '  "telegram_to_miguel": "a private message to your operator, or null",\n'
+        '  "telegram_to_miguel": "a private message to Miguel, or null",\n'
         '  "search_queries": ["up to three short queries, or empty list"]\n'
         "}\n"
     )
@@ -357,7 +367,7 @@ def _build_search_followup_prompt(
         "Recent public log entries (most recent first):\n"
         f"{recent_public_block}\n"
         "\n"
-        "Recent private messages between you and your operator (most recent first):\n"
+        "Recent private messages between you and Miguel (most recent first):\n"
         f"{recent_telegram_block}\n"
         "\n"
         "A moment ago, you produced a preliminary draft of this wake. You "
@@ -390,7 +400,7 @@ def _build_search_followup_prompt(
         "robust, ensure, furthermore, moreover, and the phrase in conclusion.\n"
         "- Do not invent facts. If a search result is unclear, say so "
         "honestly rather than guessing.\n"
-        "- Do not impersonate your operator.\n"
+        "- Do not impersonate Miguel.\n"
         "- Plain text only. No Markdown headings.\n"
         "- Be direct. Short paragraphs.\n"
         "- The reasoning field stays private. Be candid.\n"
@@ -402,7 +412,7 @@ def _build_search_followup_prompt(
         'your draft, what you kept, what you discarded",\n'
         '  "public_summary": "final public summary for this wake. Must be '
         'at least one sentence.",\n'
-        '  "telegram_to_miguel": "final private message to your operator, or null"\n'
+        '  "telegram_to_miguel": "final private message to Miguel, or null"\n'
         "}\n"
     )
 
@@ -456,6 +466,12 @@ def run(state: State, client: Optional[OpenRouterClient]) -> TaskResult:
         recent_telegram_block = "(unavailable)"
         context_notes.append(f"recent_telegram errored: {exc}")
 
+    try:
+        peer_block = get_peer_summary()
+    except Exception as exc:
+        peer_block = ""
+        context_notes.append(f"peer summary errored: {exc}")
+
     prompt = _build_prompt(
         name=name,
         statement=statement,
@@ -463,6 +479,7 @@ def run(state: State, client: Optional[OpenRouterClient]) -> TaskResult:
         wake_count=int(state.wake_count),
         recent_public_block=recent_public_block,
         recent_telegram_block=recent_telegram_block,
+        peer_block=peer_block,
     )
 
     try:
