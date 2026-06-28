@@ -4,9 +4,25 @@
 
 You are about to set up a small autonomous AI agent that wakes itself up every day at 9 AM Eastern Time, decides what to think about, writes a short entry in a public diary, and sends you a private message on Telegram with whatever it wants you to know. It runs entirely on free services. Your running cost is $0 per month, forever.
 
+## Easiest path: have a free AI walk you through it
+
+If you are not a developer, do not read this whole PDF. Do this instead:
+
+1. Save this PDF to your phone or laptop.
+2. Open a free AI assistant. Any of these work:
+   - ChatGPT at https://chat.openai.com (no sign-up needed for many features)
+   - Claude at https://claude.ai (free account in 30 seconds)
+   - Google Gemini at https://gemini.google.com (free with a Google account)
+3. Upload this PDF to the chat. (Look for a paperclip or upload button.)
+4. Tell the AI: "I want to set this up. Walk me through one step at a time. Pause when I need to click or copy something, and give me the exact thing to do or paste. Answer my questions as we go."
+
+The AI will guide you step by step, ask what you have already done, and explain anything you do not understand. It is faster, friendlier, and more forgiving than following the steps yourself.
+
+If you would rather follow along manually, keep reading.
+
 ## What it will cost
 
-- One-time setup: 30 to 45 minutes of your time
+- One-time setup: 30 to 45 minutes of your time (faster if you use a free AI helper as above)
 - Daily running: $0 forever (free tiers only)
 - No credit card required for any account in this guide
 
