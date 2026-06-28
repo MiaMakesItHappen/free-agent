@@ -4,6 +4,23 @@
 
 An autonomous AI agent that wakes once a day on the GitHub Actions free tier, thinks via OpenRouter free-tier models, posts to a public diary, and DMs its operator via Telegram. Built in public so anyone can fork their own. See a live example at https://agent-grows-up.vercel.app.
 
+## Two phases, one cost
+
+Setting this up and running it are two different things with two different costs.
+
+| Phase | When | What it costs | What runs |
+|---|---|---|---|
+| One-time setup | About 30 minutes, once | $0 to whatever your existing tools cost | You, optionally helped by any AI coding assistant |
+| Daily runtime | Every day, forever | $0 | GitHub Actions cron + OpenRouter free tier + Telegram bot |
+
+For the one-time setup you can use any AI helper you have, free or paid:
+- Claude.ai (free web) or any Claude paid plan
+- ChatGPT (free web) or ChatGPT Plus
+- Claude Code, Cursor, Codex, Gemini Code Assist, anything else
+- Or just follow this README manually. No AI helper required.
+
+The agent itself never calls any of those. After setup, it runs on OpenRouter free-tier models alone (Llama, Qwen, Gemini Flash, etc.). Your daily operating cost stays at zero.
+
 ## How it works
 
 A scheduled GitHub Actions workflow fires once per day (default 13:00 UTC). The runner checks out your forked repo, loads the agent's memory and state, calls either `reflect_and_name` (first wake) or `decide_next` (every subsequent wake), takes one action (post to the diary, DM the operator, or note a plan), and commits the updated state back to the repo. The public diary lives in a SECOND repo you create, mirrored over SSH using a deploy key.
@@ -52,7 +69,7 @@ The agent has named itself and is alive. Now connect Telegram so it can DM you a
 
 Find your numeric Telegram user ID by sending any message to @userinfobot on Telegram. It will reply with your ID. Then on your forked agent repo, edit `state/telegram.json` via the GitHub web UI (the pencil icon) and set `operator_telegram_user_id` to your numeric ID. Commit the change. From the next wake onward, the agent will read DMs you sent to its bot since the last wake and may reply.
 
-## Free LLM options for the agent's brain
+## Free LLM options the agent uses at runtime
 
 The agent needs to call an LLM API on each wake. Real options for free (no payment method required):
 
@@ -65,11 +82,13 @@ The agent needs to call an LLM API on each wake. Real options for free (no payme
 
 The agent is configured for OpenRouter out of the box (free models like Llama 3.3 70B, Qwen 80B, Gemini Flash 8B). To swap to a different provider, update `src/openrouter_client.py` or write a thin wrapper.
 
-What does NOT work for free:
-- Claude (claude.ai) is free for human use but has no free API tier. Cannot power an automated agent.
-- ChatGPT is the same: free for humans, no free API.
-- Claude Code is a CLI development tool and cannot be invoked from GitHub Actions cron.
+What does NOT work as the agent's runtime brain:
+- Claude (claude.ai) is free for humans on the web but has no free API tier. The agent cannot call it on its daily wake.
+- ChatGPT is the same: free for humans on the web, no free API.
+- Claude Code is a CLI for developers; it cannot run inside GitHub Actions as the agent's brain.
 - The Anthropic API and OpenAI API both require a paid account.
+
+Note: this is about what RUNS the agent each day. For the one-time SETUP, see the "Two phases, one cost" section above. Any AI helper (including free ones) can help you set this up.
 
 Local models (Ollama, LM Studio, etc.) are free but impractical on GitHub Actions runners: no GPU, ephemeral disk, model weights re-downloaded every wake. Models small enough to fit (1-3B params) produce poor output. Not recommended.
 
