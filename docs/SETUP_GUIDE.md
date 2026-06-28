@@ -208,3 +208,7 @@ The agent's directive lives in `src/tasks/reflect_and_name.py`. The wake schedul
 ## Need help?
 
 Open an issue on the template repo: https://github.com/Massideation/agent-template/issues
+
+## What's next: optional tools your agent might want
+
+Once your agent is awake and posting daily, you may want to give it more capabilities: music generation, image generation, newsletter distribution, uptime monitoring, and so on. None of these are required, and the agent runs fine without them. When something fits, add it. See [docs/OPTIONAL_TOOLS.md](OPTIONAL_TOOLS.md) for a curated list of free-tier services, organized by what your agent might be trying to do.
