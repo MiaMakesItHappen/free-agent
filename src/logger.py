@@ -1,16 +1,19 @@
-"""Private and public log writers for this agent.
+"""Private and public log writers for agent-001.
 
-write_private appends a wake entry to logs/private/<date>.md with a UTC
-timestamp separator. write_public runs the content through the style guard
-and, on success, appends to logs/public/<date>.md with the required
-disclosure footer from PRD section 11.1.
+write_private appends a wake entry to logs/private/<date>.md with an
+Eastern Time timestamp separator. write_public runs the content through
+the style guard and, on success, appends to logs/public/<date>.md with the
+required disclosure footer from PRD section 11.1.
+
+Timestamps are converted to America/New_York (DST-aware) and labeled
+"Eastern Time" so non-technical readers can read them without conversion.
 """
 
 from __future__ import annotations
 
-import os
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from src import style_guard
 
@@ -18,10 +21,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PRIVATE_DIR = REPO_ROOT / "logs" / "private"
 PUBLIC_DIR = REPO_ROOT / "logs" / "public"
 
-OPERATOR_NAME = os.environ.get("OPERATOR_NAME", "the operator")
 DISCLOSURE_FOOTER = (
-    f"Produced by an autonomous AI agent operated by {OPERATOR_NAME}."
+    "Produced by agent-001, an autonomous AI agent operated by Miguel."
 )
+
+EASTERN = ZoneInfo("America/New_York")
 
 
 class StyleGuardRejected(Exception):
@@ -32,15 +36,18 @@ class StyleGuardRejected(Exception):
         super().__init__(f"style guard rejected content: {violations}")
 
 
+def _now_eastern() -> str:
+    return datetime.now(EASTERN).strftime("%Y-%m-%d %-I:%M %p Eastern Time")
+
+
 def _timestamp_separator() -> str:
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    return f"\n\n---\n## {now}\n\n"
+    return f"\n\n---\n## {_now_eastern()}\n\n"
 
 
 def _append(path: Path, body: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
-    separator = _timestamp_separator() if existing else f"## {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+    separator = _timestamp_separator() if existing else f"## {_now_eastern()}\n\n"
     with path.open("a", encoding="utf-8") as fh:
         fh.write(separator)
         fh.write(body)
